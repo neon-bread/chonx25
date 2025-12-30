@@ -1,0 +1,2543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>Chonx: 2025</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Press Start 2P';
+            background: #000;
+            overflow: hidden;
+            touch-action: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        #gameContainer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #000;
+            z-index: 1;
+        }
+
+        #gameCanvas {
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            pointer-events: none;
+        }
+
+        /* Title Screen Overlay */
+        #titleScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 60px;
+        }
+
+        #titleScreen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.03) 0px,
+                rgba(0, 255, 0, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #titleScreen.hidden {
+            display: none;
+        }
+
+        #logoContainer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            margin-bottom: 40px;
+        }
+
+        #logo {
+            max-width: 60%;
+            max-height: 50vh;
+            image-rendering: pixelated;
+            display: block;
+        }
+
+        #startButton {
+            font-family: 'Press Start 2P';
+            font-size: 14px;
+            padding: 15px 30px;
+            background: #000;
+            color: #00ff00;
+            border: 4px solid #00ff00;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 
+                inset 0 0 20px rgba(0, 255, 0, 0.3),
+                0 0 20px #00ff00,
+                0 0 40px #00ff00;
+            transition: all 0.1s;
+            position: relative;
+            z-index: 2;
+            letter-spacing: 2px;
+        }
+
+        #startButton:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 
+                inset 0 0 30px rgba(0, 0, 0, 0.5),
+                0 0 30px #00ff00,
+                0 0 60px #00ff00;
+        }
+
+        #startButton:active {
+            transform: scale(0.98);
+            box-shadow: 
+                inset 0 0 40px rgba(0, 255, 0, 0.8),
+                0 0 15px #00ff00;
+        }
+
+        #legalFooter {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 12px;
+            text-align: center;
+            font-size: 7px;
+            line-height: 1.6;
+            color: #666;
+            border-top: 2px solid #00ff00;
+            z-index: 2;
+            font-family: 'Press Start 2P';
+        }
+
+        #legalFooter p {
+            margin: 2px 0;
+        }
+
+        /* Left Control Panel */
+        #leftControls {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 180px;
+            height: 100%;
+            max-height: 375px;
+            background: rgba(0, 0, 0, 0.9);
+            border-right: 3px solid #00ff00;
+            z-index: 50;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 30px;
+        }
+
+        #leftControls.active {
+            display: flex;
+        }
+
+        /* Right Control Panel */
+        #rightControls {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 180px;
+            height: 100%;
+            max-height: 375px;
+            background: rgba(0, 0, 0, 0.9);
+            border-left: 3px solid #00ff00;
+            z-index: 50;
+            display: none;
+        }
+
+        #rightControls.active {
+            display: block;
+        }
+
+        .dpad {
+            position: relative;
+            width: 137px;
+            height: 137px;
+        }
+
+        .dpad-btn {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            background: #000;
+            border: 3px solid #00ff00;
+            color: #00ff00;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            touch-action: none;
+            box-shadow: inset 0 0 10px #00ff00, 0 0 10px #00ff00;
+            image-rendering: pixelated;
+        }
+
+        .dpad-btn:active {
+            background: #00ff00;
+            color: #000;
+            box-shadow: inset 0 0 20px #000, 0 0 20px #00ff00;
+        }
+
+        #btnLeft { left: 0; top: 46px; }
+        #btnRight { right: 0; top: 46px; }
+        #btnUp { left: 46px; top: 0; }
+        #btnDown { left: 46px; bottom: 0; }
+
+        /* Fire Dial - Sleek 16-Direction Snap - Bottom Right (aligned with d-pad) */
+        #fireDial {
+            position: absolute;
+            right: 25px;
+            bottom: 30px;
+            width: 137px;
+            height: 137px;
+            background: 
+                radial-gradient(circle at center, 
+                    rgba(0, 0, 0, 0.9) 0%, 
+                    rgba(0, 50, 0, 0.6) 40%,
+                    rgba(0, 100, 0, 0.3) 70%,
+                    rgba(0, 255, 0, 0.1) 100%
+                );
+            border: 3px solid #00ff00;
+            border-radius: 50%;
+            box-shadow: 
+                inset 0 0 30px rgba(0, 255, 0, 0.4),
+                0 0 20px rgba(0, 255, 0, 0.6),
+                0 0 40px rgba(0, 255, 0, 0.3);
+            cursor: crosshair;
+            user-select: none;
+            touch-action: none;
+            overflow: hidden;
+        }
+
+        /* Crosshair lines */
+        #fireDial::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            background: 
+                linear-gradient(0deg, transparent 49%, rgba(0, 255, 0, 0.5) 49%, rgba(0, 255, 0, 0.5) 51%, transparent 51%),
+                linear-gradient(90deg, transparent 49%, rgba(0, 255, 0, 0.5) 49%, rgba(0, 255, 0, 0.5) 51%, transparent 51%),
+                linear-gradient(45deg, transparent 49%, rgba(0, 255, 0, 0.3) 49%, rgba(0, 255, 0, 0.3) 51%, transparent 51%),
+                linear-gradient(-45deg, transparent 49%, rgba(0, 255, 0, 0.3) 49%, rgba(0, 255, 0, 0.3) 51%, transparent 51%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Center dot */
+        #fireDial::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: #00ff00;
+            border-radius: 50%;
+            box-shadow: 
+                0 0 10px #00ff00,
+                0 0 20px #00ff00,
+                inset 0 0 5px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        #fireDial:active {
+            box-shadow: 
+                inset 0 0 40px rgba(0, 255, 0, 0.6),
+                0 0 30px rgba(0, 255, 0, 0.8),
+                0 0 60px rgba(0, 255, 0, 0.5);
+        }
+
+        #fireDial:active::after {
+            background: #ffff00;
+            box-shadow: 
+                0 0 15px #ffff00,
+                0 0 30px #ffff00;
+        }
+
+        .action-btn {
+            position: absolute;
+            width: 70px;
+            height: 60px;
+            background: #000;
+            border: 3px solid #ff00ff;
+            color: #ff00ff;
+            font-size: 10px;
+            font-family: 'Press Start 2P';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            user-select: none;
+            touch-action: none;
+            box-shadow: inset 0 0 10px #ff00ff, 0 0 10px #ff00ff;
+            z-index: 100;
+            cursor: pointer;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .action-btn:active {
+            background: #ff00ff;
+            color: #000;
+            box-shadow: inset 0 0 20px #000, 0 0 20px #ff00ff;
+        }
+
+        #btnJetpack {
+            top: 30px;
+        }
+
+        #btnJump {
+            top: 100px;
+        }
+
+        /* End Screen */
+        #endScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #00ff00;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #endScreen.active {
+            display: flex;
+        }
+
+        #endScreen h1 {
+            font-size: 24px;
+            margin-bottom: 40px;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        #endScreen .stats {
+            font-size: 10px;
+            line-height: 2;
+            margin-bottom: 40px;
+            text-align: left;
+            max-width: 300px;
+        }
+
+        #endTips {
+            font-size: 9px;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #ffff00;
+        }
+
+        .end-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        #refreshButton, #meetCastButton {
+            font-family: 'Press Start 2P';
+            font-size: 14px;
+            padding: 15px 30px;
+            background: #00ff00;
+            color: #000;
+            border: 3px solid #ff00ff;
+            cursor: pointer;
+            box-shadow: 0 0 20px #00ff00;
+        }
+
+        #refreshButton:active {
+            transform: scale(0.95);
+        }
+
+        /* Meet the Cast Screen */
+        #castScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            display: none;
+            overflow-y: auto;
+            padding: 20px;
+            color: #00ff00;
+        }
+
+        #castScreen.active {
+            display: block;
+        }
+
+        .cast-header {
+            text-align: center;
+            font-size: 20px;
+            color: #ff00ff;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        .cast-member {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 3px solid #00ff00;
+            background: rgba(0, 255, 0, 0.05);
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .cast-member img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            image-rendering: pixelated;
+            border: 2px solid #00ff00;
+            background: #000;
+            flex-shrink: 0;
+        }
+
+        .cast-member-text {
+            flex: 1;
+        }
+
+        .cast-member h2 {
+            font-size: 14px;
+            color: #ffff00;
+            margin-bottom: 15px;
+        }
+
+        .cast-member p {
+            font-size: 10px;
+            line-height: 1.8;
+            color: #00ff00;
+        }
+
+        #closeCastButton {
+            font-family: 'Press Start 2P';
+            font-size: 14px;
+            padding: 15px 30px;
+            background: #ff00ff;
+            color: #000;
+            border: 3px solid #00ff00;
+            cursor: pointer;
+            box-shadow: 0 0 20px #ff00ff;
+            display: block;
+            margin: 30px auto;
+        }
+
+        #closeCastButton:active {
+            transform: scale(0.95);
+        }
+
+        /* Portrait Rotate Overlay */
+        #rotateOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.2) 0%, #000 70%);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* Show overlay ONLY in portrait */
+        @media screen and (orientation: portrait) {
+            #rotateOverlay {
+                display: flex !important;
+            }
+        }
+
+        #rotateChonx {
+            width: 150px;
+            height: 225px;
+            image-rendering: pixelated;
+            margin-bottom: 60px;
+            animation: bounce 1.5s ease-in-out infinite;
+            filter: drop-shadow(0 0 40px #00ff00);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+
+        #rotateOverlay p {
+            font-family: 'Press Start 2P';
+            font-size: 20px;
+            color: #00ff00;
+            text-shadow: 0 0 40px #00ff00, 0 0 20px #00ff00;
+            line-height: 2.2;
+            max-width: 90%;
+            padding: 0 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Portrait Mode Overlay -->
+    <div id="rotateOverlay">
+        <img id="rotateChonx" src="" alt="Chonx">
+        <p>CHAT, ROTATE YOUR<br>PHONE TO CHONK.</p>
+    </div>
+
+    <!-- Title Screen -->
+    <div id="titleScreen">
+        <div id="logoContainer">
+            <img id="logo" src="" alt="Chonx: 2025">
+        </div>
+        <button id="startButton">START GAME</button>
+        <div id="legalFooter">
+            <p>&copy; 2025 Neon Bread. All rights reserved.</p>
+            <p>Chonx '25: The Rise of Brayn Wraught and its characters are owned by Neon Bread Studios.</p>
+            <p>No affiliation or endorsement implied.</p>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- Left Control Panel -->
+    <div id="leftControls">
+        <div class="dpad">
+            <div class="dpad-btn" id="btnLeft">◄</div>
+            <div class="dpad-btn" id="btnRight">►</div>
+            <div class="dpad-btn" id="btnUp">▲</div>
+            <div class="dpad-btn" id="btnDown">▼</div>
+        </div>
+    </div>
+
+    <!-- Right Control Panel -->
+    <div id="rightControls">
+        <div id="fireDial"></div>
+        <div class="action-btn" id="btnJetpack">JET</div>
+        <div class="action-btn" id="btnJump">JUMP</div>
+    </div>
+
+    <!-- End Screen -->
+    <div id="endScreen">
+        <h1 id="endTitle">THE FEED IS STABLE<br>(FOR NOW)</h1>
+        <div class="stats" id="endStats"></div>
+        <div id="endTips">TIP: Hold shooting to charge your shot</div>
+        <div class="end-buttons">
+            <button id="refreshButton">REMATCH</button>
+            <button id="meetCastButton">MEET THE CAST</button>
+        </div>
+    </div>
+
+    <!-- Meet the Cast Screen -->
+    <div id="castScreen">
+        <h1 class="cast-header">MEET THE CAST</h1>
+        
+        <div class="cast-member">
+            <img id="castChonx" src="" alt="Chonx">
+            <div class="cast-member-text">
+                <h2>CHONX THE SPACE HAMSTER</h2>
+                <p>The one and only (to his knowledge) surviver of the 2025 assault of Brayn Wraught and his army. Chonx was just your average, everyday hamster with a job and a family, until Brayn turned them into 6-7 Rats. Now Chonx is out for revenge!</p>
+            </div>
+        </div>
+
+        <div class="cast-member">
+            <img id="castKhakipi" src="" alt="Khakipi">
+            <div class="cast-member-text">
+                <h2>KHAKIPI</h2>
+                <p>Everybody knows pants are bullshit. Especially khankis. But now they're fighting back and Brayn Wraught has found a way to control them.</p>
+            </div>
+        </div>
+
+        <div class="cast-member">
+            <img id="castTurdal" src="" alt="Turdal">
+            <div class="cast-member-text">
+                <h2>TURDALS</h2>
+                <p>If you've ever flushed a pet turtle, you're on the Turdals' list. (There are worse lists to be on.) Brayn channels these corrupt former pets as his first ground offense.</p>
+            </div>
+        </div>
+
+        <div class="cast-member">
+            <img id="castCloudTwerker" src="" alt="Cloud Twerker">
+            <div class="cast-member-text">
+                <h2>CLOUD TWERKERS</h2>
+                <p>Graceful yet deadly, their pics are definitely filtered! Swipe left before they douse you in their toxic traits.</p>
+            </div>
+        </div>
+
+        <div class="cast-member">
+            <img id="castRat" src="" alt="6-7 Rat">
+            <div class="cast-member-text">
+                <h2>THE 6-7 RATS</h2>
+                <p>What do you get when Brayn Wraught captures a critter and devours its brains? These nightmarish rats whose chant is almost as haunting as their eyes. There's no cure for Brayn's brand of zombification….except death.</p>
+            </div>
+        </div>
+
+        <div class="cast-member">
+            <img id="castBrayn" src="" alt="Brayn Wraught">
+            <div class="cast-member-text">
+                <h2>BRAYN WRAUGHT</h2>
+                <p>The King of Soshelmeedya, an underworld where he keeps the brains of his victims. His favorite food is critter brains.</p>
+            </div>
+        </div>
+
+        <button id="closeCastButton">BACK</button>
+    </div>
+
+    <script>
+        // ===============================================
+        // ASSET CONFIGURATION
+        // ===============================================
+        const ASSET_BASE_URL = "https://raw.githubusercontent.com/LogicNerds/chonx2025/main/";
+
+        const ASSETS = {
+            images: {
+                background: ASSET_BASE_URL + "assets/background.jpg",
+                logo: ASSET_BASE_URL + "assets/chonx25%20logo.png",
+                neonBreadLogo: ASSET_BASE_URL + "assets/NeonBread Blue on clear.png"
+            },
+            sprites: {
+                chonxStand: ASSET_BASE_URL + "assets/Chonx standing.png",
+                chonxRun: ASSET_BASE_URL + "assets/Chonx run gait.png",
+                turdal: ASSET_BASE_URL + "assets/Turdal.png",
+                cloudTwerker: ASSET_BASE_URL + "assets/Cloud Twerker.png",
+                khakipi: ASSET_BASE_URL + "assets/Khakipus.png",
+                rat1: ASSET_BASE_URL + "assets/SixSeven Rat 1.png",
+                rat2: ASSET_BASE_URL + "assets/SixSeven Rat 2.png",
+                braynStand: ASSET_BASE_URL + "assets/brayn wraught standing.png",
+                braynSpit: ASSET_BASE_URL + "assets/brayn wraught spitting.png"
+            },
+            audio: {
+                bgMusic: ASSET_BASE_URL + "assets/Chonx's%20Quest.mp3",
+                bruvBruh: ASSET_BASE_URL + "assets/Bruh.m4a",
+                ratsSixSeven: ASSET_BASE_URL + "assets/SixSevenChonx.mp3",
+                chipShoot: ASSET_BASE_URL + "assets/chip_shoot.mp3",
+                chipJump: ASSET_BASE_URL + "assets/chip_jump.mp3",
+                chipJetpack: ASSET_BASE_URL + "assets/chip_jetpack.mp3",
+                chipHit: ASSET_BASE_URL + "assets/chip_hit.mp3",
+                chipCharge: ASSET_BASE_URL + "assets/chip_charge.mp3"
+            }
+        };
+
+        // ===============================================
+        // CANVAS SETUP - LANDSCAPE
+        // ===============================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const BASE_WIDTH = 667;  // Swapped from 375
+        const BASE_HEIGHT = 375; // Swapped from 667
+
+        canvas.width = BASE_WIDTH;
+        canvas.height = BASE_HEIGHT;
+
+        let scale = 1;
+        const HUD_HEIGHT = 50; // Reduced for landscape
+        const ARENA_HEIGHT = BASE_HEIGHT - HUD_HEIGHT;
+        const GROUND_Y = HUD_HEIGHT + ARENA_HEIGHT - 50;
+
+        // ===============================================
+        // GAMEPAD SUPPORT
+        // ===============================================
+        let gamepadIndex = null;
+        let gamepadState = {
+            leftStickX: 0,
+            leftStickY: 0,
+            rightStickX: 0,
+            rightStickY: 0,
+            buttonA: false,
+            buttonB: false,
+            buttonX: false,
+            buttonY: false,
+            dpadUp: false,
+            dpadDown: false,
+            dpadLeft: false,
+            dpadRight: false,
+            shoulderL: false,
+            shoulderR: false,
+            triggerL: false,
+            triggerR: false
+        };
+
+        window.addEventListener('gamepadconnected', (e) => {
+            console.log('Gamepad connected:', e.gamepad.id);
+            gamepadIndex = e.gamepad.index;
+        });
+
+        window.addEventListener('gamepaddisconnected', (e) => {
+            console.log('Gamepad disconnected');
+            if (gamepadIndex === e.gamepad.index) {
+                gamepadIndex = null;
+            }
+        });
+
+        function updateGamepad() {
+            if (gamepadIndex === null) return;
+
+            const gamepads = navigator.getGamepads();
+            const gamepad = gamepads[gamepadIndex];
+            
+            if (!gamepad) return;
+
+            // Left stick (movement)
+            gamepadState.leftStickX = Math.abs(gamepad.axes[0]) > 0.2 ? gamepad.axes[0] : 0;
+            gamepadState.leftStickY = Math.abs(gamepad.axes[1]) > 0.2 ? gamepad.axes[1] : 0;
+
+            // Right stick (aiming)
+            gamepadState.rightStickX = Math.abs(gamepad.axes[2]) > 0.2 ? gamepad.axes[2] : 0;
+            gamepadState.rightStickY = Math.abs(gamepad.axes[3]) > 0.2 ? gamepad.axes[3] : 0;
+
+            // Buttons (standard mapping)
+            gamepadState.buttonA = gamepad.buttons[0]?.pressed || false; // Jump
+            gamepadState.buttonB = gamepad.buttons[1]?.pressed || false;
+            gamepadState.buttonX = gamepad.buttons[2]?.pressed || false;
+            gamepadState.buttonY = gamepad.buttons[3]?.pressed || false;
+
+            // Shoulders and triggers
+            gamepadState.shoulderL = gamepad.buttons[4]?.pressed || false;
+            gamepadState.shoulderR = gamepad.buttons[5]?.pressed || false;
+            gamepadState.triggerL = gamepad.buttons[6]?.pressed || false; // Jetpack
+            gamepadState.triggerR = gamepad.buttons[7]?.pressed || false; // Shoot
+
+            // D-pad
+            gamepadState.dpadUp = gamepad.buttons[12]?.pressed || false;
+            gamepadState.dpadDown = gamepad.buttons[13]?.pressed || false;
+            gamepadState.dpadLeft = gamepad.buttons[14]?.pressed || false;
+            gamepadState.dpadRight = gamepad.buttons[15]?.pressed || false;
+
+            // Apply to game controls
+            if (gameState === 'playing') {
+                // Movement from left stick or d-pad
+                if (Math.abs(gamepadState.leftStickX) > 0.2) {
+                    if (gamepadState.leftStickX < 0) {
+                        keys.left = true;
+                        keys.right = false;
+                    } else {
+                        keys.right = true;
+                        keys.left = false;
+                    }
+                } else if (gamepadState.dpadLeft) {
+                    keys.left = true;
+                    keys.right = false;
+                } else if (gamepadState.dpadRight) {
+                    keys.right = true;
+                    keys.left = false;
+                } else {
+                    keys.left = false;
+                    keys.right = false;
+                }
+
+                // Vertical movement
+                keys.up = gamepadState.dpadUp || gamepadState.leftStickY < -0.2;
+                keys.down = gamepadState.dpadDown || gamepadState.leftStickY > 0.2;
+
+                // Gamepad shooting removed - only fire dial controls shooting
+            }
+        }
+
+        let gamepadLastShot = 0;
+        let gamepadCharging = false;
+        let gamepadChargeStart = 0;
+
+        // ===============================================
+        // ASSET LOADING
+        // ===============================================
+        const sprites = {};
+        const sounds = {};
+        let imagesLoaded = 0;
+        let totalImages = 0;
+
+        function loadAssets(callback) {
+            totalImages = Object.keys(ASSETS.sprites).length + Object.keys(ASSETS.images).length - 1;
+
+            sprites.background = new Image();
+            sprites.background.onload = () => {
+                imagesLoaded++;
+                checkAssetsLoaded(callback);
+            };
+            sprites.background.onerror = () => {
+                console.log('Background image failed to load');
+                imagesLoaded++;
+                checkAssetsLoaded(callback);
+            };
+            sprites.background.src = ASSETS.images.background;
+
+            // Load Neon Bread logo
+            sprites.neonBreadLogo = new Image();
+            sprites.neonBreadLogo.onload = () => {
+                imagesLoaded++;
+                checkAssetsLoaded(callback);
+            };
+            sprites.neonBreadLogo.onerror = () => {
+                console.log('Neon Bread logo failed to load');
+                imagesLoaded++;
+                checkAssetsLoaded(callback);
+            };
+            sprites.neonBreadLogo.src = ASSETS.images.neonBreadLogo;
+
+            Object.keys(ASSETS.sprites).forEach(key => {
+                sprites[key] = new Image();
+                sprites[key].onload = () => {
+                    imagesLoaded++;
+                    checkAssetsLoaded(callback);
+                };
+                sprites[key].onerror = () => {
+                    console.log(`Sprite ${key} failed to load`);
+                    imagesLoaded++;
+                    checkAssetsLoaded(callback);
+                };
+                sprites[key].src = ASSETS.sprites[key];
+            });
+
+            Object.keys(ASSETS.audio).forEach(key => {
+                try {
+                    sounds[key] = new Audio(ASSETS.audio[key]);
+                    sounds[key].onerror = () => {
+                        console.log(`Audio ${key} failed to load`);
+                    };
+                } catch (e) {
+                    console.log(`Audio ${key} failed to initialize`);
+                }
+            });
+
+            if (sounds.bgMusic) {
+                sounds.bgMusic.loop = true;
+                sounds.bgMusic.volume = 0.4;
+            }
+            if (sounds.chipJetpack) sounds.chipJetpack.loop = true;
+            if (sounds.chipCharge) sounds.chipCharge.loop = true;
+            if (sounds.ratsSixSeven) {
+                sounds.ratsSixSeven.loop = true;
+                sounds.ratsSixSeven.volume = 0.67;
+            }
+        }
+
+        function checkAssetsLoaded(callback) {
+            if (imagesLoaded >= totalImages) {
+                console.log('All assets loaded!');
+                callback();
+            }
+        }
+
+        // ===============================================
+        // AUDIO SYSTEM
+        // ===============================================
+        let audioContext = null;
+
+        function initAudioContext() {
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Web Audio not supported');
+                }
+            }
+        }
+
+        function playSound(soundKey, volume = 0.5) {
+            if (sounds[soundKey]) {
+                try {
+                    sounds[soundKey].currentTime = 0;
+                    sounds[soundKey].volume = volume;
+                    sounds[soundKey].play().catch(e => {
+                        playBeep(soundKey, volume);
+                    });
+                } catch (e) {
+                    playBeep(soundKey, volume);
+                }
+            } else {
+                playBeep(soundKey, volume);
+            }
+        }
+
+        function playBeep(soundKey, volume) {
+            if (!audioContext) initAudioContext();
+            if (!audioContext) return;
+
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                gainNode.gain.value = volume * 0.5;
+                
+                let duration = 0.1;
+                
+                if (soundKey === 'chipShoot') {
+                    oscillator.frequency.value = 880;
+                    oscillator.type = 'square';
+                    duration = 0.08;
+                } else if (soundKey === 'chipJump') {
+                    oscillator.frequency.value = 440;
+                    oscillator.type = 'square';
+                    duration = 0.12;
+                } else if (soundKey === 'chipHit') {
+                    oscillator.frequency.value = 150;
+                    oscillator.type = 'sawtooth';
+                    duration = 0.1;
+                } else if (soundKey === 'chipJetpack') {
+                    oscillator.frequency.value = 300;
+                    oscillator.type = 'triangle';
+                    duration = 0.15;
+                } else if (soundKey === 'chipCharge') {
+                    oscillator.frequency.value = 600;
+                    oscillator.type = 'sine';
+                    duration = 0.2;
+                }
+                
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.log('Beep error:', e);
+            }
+        }
+
+        // ===============================================
+        // GAME STATE
+        // ===============================================
+        let gameState = 'title';
+        let currentWave = 0;
+        let score = 0;
+        let jetpackUnlocked = false;
+
+        let stats = {
+            enemiesKilled: 0,
+            chargeShotsUsed: 0,
+            jetpackActivations: 0,
+            startTime: 0
+        };
+
+        // ===============================================
+        // PLAYER STATE
+        // ===============================================
+        const player = {
+            x: 50,
+            y: GROUND_Y - 60,
+            width: 40,
+            height: 60,
+            velocityX: 0,
+            velocityY: 0,
+            speed: 3,
+            jumpPower: -12,
+            gravity: 0.5,
+            isGrounded: true,
+            isJumping: false,
+            health: 100,
+            jetpackEnergy: 100,
+            jetpackActive: false,
+            animFrame: 0,
+            animTimer: 0,
+            facing: 1
+        };
+
+        // ===============================================
+        // SHOOTING STATE
+        // ===============================================
+        const projectiles = [];
+
+        // ===============================================
+        // ENEMIES
+        // ===============================================
+        const enemies = [];
+        let waveEnemiesSpawned = 0;
+        let waveEnemiesTotal = 0;
+        let spawnTimer = 0;
+        let boss = null;
+        let bossPhase = 1;
+        let ratChantPlaying = false;
+
+        // ===============================================
+        // BACKGROUND SCROLLING
+        // ===============================================
+        let bgX1 = 0;
+        let bgX2 = BASE_WIDTH;
+        const bgScrollSpeed = 0.3;
+
+        // ===============================================
+        // INPUT HANDLING
+        // ===============================================
+        const keys = {
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            jump: false,
+            jetpack: false
+        };
+
+        function setupControls() {
+            // D-pad
+            const btnLeft = document.getElementById('btnLeft');
+            const btnRight = document.getElementById('btnRight');
+            const btnUp = document.getElementById('btnUp');
+            const btnDown = document.getElementById('btnDown');
+            const btnJump = document.getElementById('btnJump');
+            const btnJetpack = document.getElementById('btnJetpack');
+
+            // Touch events for buttons
+            btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); keys.left = true; });
+            btnLeft.addEventListener('touchend', (e) => { e.preventDefault(); keys.left = false; });
+            btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); keys.right = true; });
+            btnRight.addEventListener('touchend', (e) => { e.preventDefault(); keys.right = false; });
+            btnUp.addEventListener('touchstart', (e) => { e.preventDefault(); keys.up = true; });
+            btnUp.addEventListener('touchend', (e) => { e.preventDefault(); keys.up = false; });
+            btnDown.addEventListener('touchstart', (e) => { e.preventDefault(); keys.down = true; });
+            btnDown.addEventListener('touchend', (e) => { e.preventDefault(); keys.down = false; });
+            
+            btnJump.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                if (player.isGrounded && !player.isJumping) {
+                    player.velocityY = player.jumpPower;
+                    player.isJumping = true;
+                    player.isGrounded = false;
+                    playSound('chipJump', 0.3);
+                }
+            });
+
+            btnJetpack.addEventListener('touchstart', (e) => { 
+                e.preventDefault();
+                if (jetpackUnlocked && player.jetpackEnergy > 0) {
+                    player.jetpackActive = !player.jetpackActive;
+                    
+                    if (player.jetpackActive) {
+                        stats.jetpackActivations++;
+                        playSound('chipJetpack', 0.3);
+                        player.isGrounded = false;
+                        player.velocityY = -8;
+                    }
+                }
+            });
+
+            btnJetpack.addEventListener('click', (e) => { 
+                e.preventDefault();
+                if (jetpackUnlocked && player.jetpackEnergy > 0) {
+                    player.jetpackActive = !player.jetpackActive;
+                    
+                    if (player.jetpackActive) {
+                        stats.jetpackActivations++;
+                        playSound('chipJetpack', 0.3);
+                        player.isGrounded = false;
+                        player.velocityY = -8;
+                    }
+                }
+            });
+
+            // Keyboard - WASD + Space/Shift
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.left = true;
+                if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.right = true;
+                if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.up = true;
+                if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.down = true;
+                
+                // Spacebar for jump
+                if (e.key === ' ' && player.isGrounded && !player.isJumping) {
+                    player.velocityY = player.jumpPower;
+                    player.isJumping = true;
+                    player.isGrounded = false;
+                    playSound('chipJump', 0.3);
+                }
+                
+                // Shift for jetpack
+                if ((e.key === 'Shift' || e.key === 'Control') && jetpackUnlocked && player.jetpackEnergy > 0) {
+                    player.jetpackActive = !player.jetpackActive;
+                    
+                    if (player.jetpackActive) {
+                        stats.jetpackActivations++;
+                        playSound('chipJetpack', 0.3);
+                        player.isGrounded = false;
+                        player.velocityY = -8;
+                    }
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.left = false;
+                if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.right = false;
+                if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.up = false;
+                if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.down = false;
+            });
+
+            // Mouse click for shooting
+            // Canvas click removed - only fire dial controls shooting
+
+            // Fire Dial - 16-direction snap-to-angle shooting with hold-to-charge
+            const fireDial = document.getElementById('fireDial');
+            
+            // Define 16 directions (in radians, 0 = right, counter-clockwise)
+            const directions16 = [
+                0,                  // Right (0°)
+                -Math.PI / 8,       // 22.5°
+                -Math.PI / 4,       // Up-Right (45°)
+                -3 * Math.PI / 8,   // 67.5°
+                -Math.PI / 2,       // Up (90°)
+                -5 * Math.PI / 8,   // 112.5°
+                -3 * Math.PI / 4,   // Up-Left (135°)
+                -7 * Math.PI / 8,   // 157.5°
+                Math.PI,            // Left (180°)
+                7 * Math.PI / 8,    // 202.5°
+                3 * Math.PI / 4,    // Down-Left (225°)
+                5 * Math.PI / 8,    // 247.5°
+                Math.PI / 2,        // Down (270°)
+                3 * Math.PI / 8,    // 292.5°
+                Math.PI / 4,        // Down-Right (315°)
+                Math.PI / 8         // 337.5°
+            ];
+            
+            function snapToNearest16(angle) {
+                // Normalize angle to -PI to PI range
+                while (angle > Math.PI) angle -= 2 * Math.PI;
+                while (angle < -Math.PI) angle += 2 * Math.PI;
+                
+                // Find closest direction
+                let closestAngle = directions16[0];
+                let minDiff = Math.abs(angle - closestAngle);
+                
+                for (let i = 1; i < directions16.length; i++) {
+                    let diff = Math.abs(angle - directions16[i]);
+                    // Handle wrap-around at PI/-PI boundary
+                    if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                    
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        closestAngle = directions16[i];
+                    }
+                }
+                
+                return closestAngle;
+            }
+            
+            let dialCharging = false;
+            let dialChargeStart = 0;
+            let dialChargeAngle = 0;
+            let chargeEnergyDrainInterval = null;
+            
+            function handleDialStart(e) {
+                e.preventDefault();
+                
+                // Can't charge without jetpack energy
+                if (!jetpackUnlocked || player.jetpackEnergy <= 0) {
+                    // Fire instant shot instead
+                    handleDialInstantShoot(e);
+                    return;
+                }
+                
+                dialCharging = true;
+                dialChargeStart = Date.now();
+                
+                // Get tap position and calculate angle
+                const rect = fireDial.getBoundingClientRect();
+                
+                // Use targetTouches - only touches on the dial element
+                const touch = e.targetTouches ? e.targetTouches[0] : e;
+                const clientX = touch.clientX;
+                const clientY = touch.clientY;
+                
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const dx = clientX - centerX;
+                const dy = clientY - centerY;
+                
+                const rawAngle = Math.atan2(dy, dx);
+                dialChargeAngle = snapToNearest16(rawAngle);
+                
+                // Play charge sound
+                playSound('chipCharge', 0.2);
+                
+                // Start draining jetpack energy while charging
+                chargeEnergyDrainInterval = setInterval(() => {
+                    if (player.jetpackEnergy > 0) {
+                        player.jetpackEnergy -= 0.25; // ~15 energy per second
+                        if (player.jetpackEnergy < 0) player.jetpackEnergy = 0;
+                    } else {
+                        // Energy depleted, stop charging
+                        if (dialCharging) {
+                            handleDialEnd(e);
+                        }
+                    }
+                }, 1000 / 60); // Every frame
+            }
+            
+            function handleDialEnd(e) {
+                e.preventDefault();
+                if (!dialCharging) return;
+                
+                dialCharging = false;
+                if (sounds.chipCharge) sounds.chipCharge.pause();
+                
+                // Stop energy drain
+                if (chargeEnergyDrainInterval) {
+                    clearInterval(chargeEnergyDrainInterval);
+                    chargeEnergyDrainInterval = null;
+                }
+                
+                const chargeDuration = (Date.now() - dialChargeStart) / 1000;
+                
+                // Calculate damage based on charge time
+                let damage = 1;
+                let isCharged = false;
+                let radius = 4;
+                
+                if (chargeDuration < 0.3) {
+                    damage = 1;
+                } else if (chargeDuration < 0.6) {
+                    damage = 2;
+                    isCharged = true;
+                    radius = 6;
+                    stats.chargeShotsUsed++;
+                } else {
+                    damage = 3;
+                    isCharged = true;
+                    radius = 8;
+                    stats.chargeShotsUsed++;
+                }
+                
+                // Fire charged shot
+                const speed = 8;
+                
+                projectiles.push({
+                    x: player.x + player.width / 2,
+                    y: player.y + player.height / 2,
+                    velocityX: Math.cos(dialChargeAngle) * speed,
+                    velocityY: Math.sin(dialChargeAngle) * speed,
+                    damage: damage,
+                    radius: radius,
+                    isCharged: isCharged
+                });
+                
+                playSound('chipShoot', 0.3);
+            }
+            
+            function handleDialInstantShoot(e) {
+                e.preventDefault();
+                
+                // Get tap position and calculate angle
+                const rect = fireDial.getBoundingClientRect();
+                
+                // Use targetTouches - only touches on the dial element
+                const touch = e.targetTouches ? e.targetTouches[0] : e;
+                const clientX = touch.clientX;
+                const clientY = touch.clientY;
+                
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const dx = clientX - centerX;
+                const dy = clientY - centerY;
+                
+                const rawAngle = Math.atan2(dy, dx);
+                const snappedAngle = snapToNearest16(rawAngle);
+                
+                shootProjectileAtAngle(snappedAngle, false);
+            }
+            
+            fireDial.addEventListener('touchstart', handleDialStart);
+            fireDial.addEventListener('mousedown', handleDialStart);
+            fireDial.addEventListener('touchend', handleDialEnd);
+            fireDial.addEventListener('mouseup', handleDialEnd);
+            fireDial.addEventListener('touchcancel', handleDialEnd);
+        }
+
+        function shootProjectileAtAngle(angle, isCharged) {
+            const speed = 8;
+            
+            projectiles.push({
+                x: player.x + player.width / 2,
+                y: player.y + player.height / 2,
+                velocityX: Math.cos(angle) * speed,
+                velocityY: Math.sin(angle) * speed,
+                damage: isCharged ? 3 : 1,
+                radius: isCharged ? 8 : 4,
+                isCharged: isCharged
+            });
+            
+            playSound('chipShoot', 0.3);
+        }
+
+        // ===============================================
+        // WAVE MANAGEMENT
+        // ===============================================
+        function startWave(waveNum) {
+            currentWave = waveNum;
+            enemies.length = 0;
+            waveEnemiesSpawned = 0;
+            spawnTimer = 0;
+
+            if (waveNum === 1) {
+                waveEnemiesTotal = 999;
+            } else if (waveNum === 2) {
+                waveEnemiesTotal = 40;
+            } else if (waveNum === 3) {
+                waveEnemiesTotal = 67;
+                
+                // INITIAL RAT RUSH - spawn 20 rats immediately (ALL FAST, all heights, CHAOS)
+                for (let i = 0; i < 20; i++) {
+                    const speedType = Math.random();
+                    let speed;
+                    
+                    // ALL FAST in initial rush
+                    if (speedType < 0.5) {
+                        speed = -3.75; // Fast
+                    } else {
+                        speed = -6; // Very fast
+                    }
+                    
+                    // Random spawn types including ground bursts and vertical drops
+                    const spawnType = Math.random();
+                    let spawnX, spawnY, initialVelocityY;
+                    
+                    if (spawnType < 0.25) {
+                        // Normal horizontal spawn - top
+                        spawnX = 500 + i * 25; // Just off right edge
+                        spawnY = HUD_HEIGHT + 10 + Math.random() * 60;
+                        initialVelocityY = 0;
+                    } else if (spawnType < 0.5) {
+                        // Normal horizontal spawn - middle
+                        spawnX = 500 + i * 25;
+                        spawnY = HUD_HEIGHT + 80 + Math.random() * 80;
+                        initialVelocityY = Math.random() * 2;
+                    } else if (spawnType < 0.7) {
+                        // VERTICAL DROP - straight down from ceiling IN ARENA
+                        spawnX = 240 + Math.random() * 200; // 240-440px (center of visible arena)
+                        spawnY = HUD_HEIGHT + 10;
+                        initialVelocityY = 0; // Will fall straight down
+                        // Keep horizontal speed so they progress left while falling
+                    } else {
+                        // GROUND BURST - shoot up from below IN ARENA
+                        spawnX = 240 + Math.random() * 200; // 240-440px (center of visible arena)
+                        spawnY = GROUND_Y + 20; // Below ground
+                        initialVelocityY = -15; // Shoot upward fast
+                        // Keep horizontal speed so they progress left while bursting
+                    }
+                    
+                    enemies.push({
+                        type: 'rat',
+                        x: spawnX,
+                        y: spawnY,
+                        width: 40,
+                        height: 40,
+                        velocityX: speed,
+                        velocityY: initialVelocityY,
+                        health: 1,
+                        animFrame: 0,
+                        animTimer: 0,
+                        canJump: true,
+                        jumpPower: -8,
+                        jumpTimer: 50,
+                        jumpFrequency: 50,
+                        onGround: false,
+                        points: 1
+                    });
+                    
+                    waveEnemiesSpawned++;
+                }
+                
+                // Start rat chant
+                if (sounds.ratsSixSeven) {
+                    sounds.ratsSixSeven.currentTime = 0;
+                    sounds.ratsSixSeven.play().catch(e => console.log('Rat chant blocked'));
+                    ratChantPlaying = true;
+                }
+            } else if (waveNum === 4) {
+                spawnBoss();
+            }
+        }
+
+        function updateWaveSpawning() {
+            if (currentWave === 4) return;
+            
+            if (currentWave === 1) {
+                spawnTimer++;
+                if (spawnTimer >= 50) {
+                    spawnTimer = 0;
+                    spawnEnemy();
+                }
+                return;
+            }
+            
+            if (waveEnemiesSpawned >= waveEnemiesTotal) return;
+
+            spawnTimer++;
+            
+            let spawnRate = 60;
+            if (currentWave === 2) spawnRate = 40; // Much faster
+            if (currentWave === 3) spawnRate = 15; // Even more frantic
+
+            if (spawnTimer >= spawnRate) {
+                spawnTimer = 0;
+                spawnEnemy();
+            }
+        }
+
+        function spawnEnemy() {
+            waveEnemiesSpawned++;
+
+            if (currentWave === 1) {
+                // Khakipi - darting aerial enemy (rarely on ground)
+                // Spawn at 20% to 80% of arena height (mostly in air)
+                const minY = HUD_HEIGHT + (ARENA_HEIGHT * 0.2);
+                const maxY = HUD_HEIGHT + (ARENA_HEIGHT * 0.8);
+                const spawnY = minY + Math.random() * (maxY - minY);
+                
+                enemies.push({
+                    type: 'khakipi',
+                    x: BASE_WIDTH + 50,
+                    y: spawnY,
+                    width: 62,
+                    height: 62,
+                    velocityX: -2 - Math.random() * 1, // Varied base speed
+                    velocityY: (Math.random() - 0.5) * 6, // Initial vertical movement
+                    health: 2,
+                    burstTimer: 15 + Math.random() * 15, // More frequent darting
+                    onGround: false, // Always aerial
+                    points: 4
+                });
+            } else if (currentWave === 2) {
+                // 70% Cloud Twerkers (aerial), 30% Turdals (ground)
+                if (Math.random() < 0.3) {
+                    // Turdal - occasional ground threat
+                    enemies.push({
+                        type: 'turdal',
+                        x: BASE_WIDTH + 50,
+                        y: GROUND_Y - 55,
+                        width: 55,
+                        height: 55,
+                        velocityX: -1.5,
+                        velocityY: 0,
+                        health: 3,
+                        shootTimer: Math.random() * 60 + 60,
+                        shootCooldown: 120,
+                        points: 2
+                    });
+                } else {
+                    // Cloud Twerker - majority aerial threat
+                    const minY = HUD_HEIGHT + 60;
+                    const maxY = GROUND_Y - 120;
+                    const spawnY = minY + Math.random() * (maxY - minY);
+                    
+                    enemies.push({
+                        type: 'cloudTwerker',
+                        x: BASE_WIDTH + 50,
+                        y: spawnY,
+                        baseY: spawnY,
+                        width: 40,
+                        height: 40,
+                        velocityX: -0.8,
+                        velocityY: 0,
+                        health: 2,
+                        floatPhase: Math.random() * Math.PI * 2,
+                        dropTimer: Math.random() * 90 + 60,
+                        points: 2
+                    });
+                }
+            } else if (currentWave === 3) {
+                const speedType = Math.random();
+                let speed, jumpPower, jumpFrequency;
+                
+                // More fast rats: 60% fast/very fast instead of 30%
+                // All speeds increased by 1.5x
+                if (speedType < 0.15) {
+                    // Very slow (15% - reduced from 20%)
+                    speed = -1.2; // was -0.8
+                    jumpPower = 0;
+                    jumpFrequency = 0;
+                } else if (speedType < 0.25) {
+                    // Slow (10% - reduced from 20%)
+                    speed = -1.8; // was -1.2
+                    jumpPower = -5;
+                    jumpFrequency = 80 + Math.random() * 40;
+                } else if (speedType < 0.6) {
+                    // Fast (35% - increased from 30%)
+                    speed = -3.75; // was -2.5
+                    jumpPower = -8;
+                    jumpFrequency = 50 + Math.random() * 30;
+                } else {
+                    // Very fast (25% - same, but increased base speed)
+                    speed = -6; // was -4
+                    jumpPower = -12;
+                    jumpFrequency = 30 + Math.random() * 20;
+                }
+                
+                // Spawn type: ALL heights + vertical drops + ground bursts
+                const spawnType = Math.random();
+                let spawnX, spawnY, initialVelocityY, onGround;
+                
+                if (spawnType < 0.2) {
+                    // Ground spawn (20%)
+                    spawnX = 500 + Math.random() * 50; // Just off right edge
+                    spawnY = GROUND_Y - 40;
+                    initialVelocityY = 0;
+                    onGround = true;
+                } else if (spawnType < 0.4) {
+                    // VERTICAL DROP - straight down IN ARENA (20%)
+                    spawnX = 240 + Math.random() * 200; // 240-440px (center of arena)
+                    spawnY = HUD_HEIGHT + 10;
+                    initialVelocityY = 0;
+                    onGround = false;
+                    // Keep horizontal speed so they progress left while falling
+                } else if (spawnType < 0.55) {
+                    // GROUND BURST - shoot up IN ARENA (15%)
+                    spawnX = 240 + Math.random() * 200; // 240-440px (center of arena)
+                    spawnY = GROUND_Y + 20; // Below ground
+                    initialVelocityY = -15; // Fast upward
+                    onGround = false;
+                    // Keep horizontal speed so they progress left while bursting
+                } else if (spawnType < 0.75) {
+                    // Mid-air spawn - high (20%)
+                    spawnX = 500 + Math.random() * 80; // Just off right
+                    spawnY = HUD_HEIGHT + 60 + Math.random() * 80;
+                    initialVelocityY = Math.random() * 2;
+                    onGround = false;
+                } else {
+                    // Mid-air spawn - middle (25%)
+                    spawnX = 500 + Math.random() * 80; // Just off right
+                    spawnY = HUD_HEIGHT + 140 + Math.random() * 80;
+                    initialVelocityY = Math.random() * 3;
+                    onGround = false;
+                }
+                
+                enemies.push({
+                    type: 'rat',
+                    x: spawnX,
+                    y: spawnY,
+                    width: 40,
+                    height: 40,
+                    velocityX: speed,
+                    velocityY: initialVelocityY,
+                    health: 1,
+                    animFrame: 0,
+                    animTimer: 0,
+                    canJump: jumpPower !== 0,
+                    jumpPower: jumpPower,
+                    jumpTimer: jumpFrequency,
+                    jumpFrequency: jumpFrequency,
+                    onGround: onGround,
+                    points: 1
+                });
+                
+                if (!ratChantPlaying && sounds.ratsSixSeven) {
+                    sounds.ratsSixSeven.currentTime = 0;
+                    sounds.ratsSixSeven.play().catch(e => console.log('Rat chant blocked'));
+                    ratChantPlaying = true;
+                }
+            }
+        }
+
+        function spawnBoss() {
+            boss = {
+                x: BASE_WIDTH - 150,
+                y: GROUND_Y - 120,
+                width: 100,
+                height: 120,
+                velocityX: 0,
+                velocityY: 0,
+                health: 67,
+                maxHealth: 67,
+                shootTimer: 30,
+                shootCooldown: 45,
+                isShooting: false,
+                shootAnimTimer: 0,
+                ratSpawnTimer: 0,
+                hopTimer: 90,
+                isGrounded: true
+            };
+        }
+
+        // ===============================================
+        // UPDATE LOOP
+        // ===============================================
+        function update() {
+            if (gameState !== 'playing' && gameState !== 'victory') return;
+            
+            // During victory sequence, only render - no gameplay updates
+            if (gameState === 'victory') return;
+
+            // Update gamepad
+            updateGamepad();
+
+            bgX1 -= bgScrollSpeed;
+            bgX2 -= bgScrollSpeed;
+
+            if (bgX1 <= -BASE_WIDTH) bgX1 = bgX2 + BASE_WIDTH;
+            if (bgX2 <= -BASE_WIDTH) bgX2 = bgX1 + BASE_WIDTH;
+
+            if (keys.left) {
+                player.velocityX = -player.speed;
+                player.facing = -1;
+            } else if (keys.right) {
+                player.velocityX = player.speed;
+                player.facing = 1;
+            } else {
+                player.velocityX *= 0.8;
+            }
+
+            if (player.jetpackActive && jetpackUnlocked) {
+                if (player.jetpackEnergy > 0) {
+                    player.jetpackEnergy -= 0.2;
+                    
+                    player.velocityY = 0;
+                    
+                    if (keys.up) {
+                        player.velocityY = -3;
+                    } else if (keys.down) {
+                        player.velocityY = 3;
+                    }
+                } else {
+                    player.jetpackActive = false;
+                    player.jetpackEnergy = 0;
+                }
+            } else {
+                if (!player.isGrounded) {
+                    player.velocityY += player.gravity;
+                }
+            }
+
+            player.x += player.velocityX;
+            player.y += player.velocityY;
+
+            if (player.x < 0) player.x = 0;
+            if (player.x > BASE_WIDTH - player.width) player.x = BASE_WIDTH - player.width;
+
+            if (player.y >= GROUND_Y - player.height) {
+                player.y = GROUND_Y - player.height;
+                player.velocityY = 0;
+                player.isGrounded = true;
+                player.isJumping = false;
+            } else {
+                player.isGrounded = false;
+            }
+
+            if (Math.abs(player.velocityX) > 0.5 && player.isGrounded) {
+                player.animTimer++;
+                if (player.animTimer > 12) {
+                    player.animFrame = 1 - player.animFrame;
+                    player.animTimer = 0;
+                }
+            } else {
+                player.animFrame = 0;
+            }
+
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const p = projectiles[i];
+                p.x += p.velocityX;
+                p.y += p.velocityY;
+
+                if (p.x < -20 || p.x > BASE_WIDTH + 20 || p.y < -20 || p.y > BASE_HEIGHT + 20) {
+                    projectiles.splice(i, 1);
+                }
+            }
+
+            updateEnemies();
+
+            if (boss) {
+                updateBoss();
+            }
+
+            updateWaveSpawning();
+
+            if (currentWave === 1 && score >= 67 && !jetpackUnlocked) {
+                jetpackUnlocked = true;
+                player.jetpackEnergy = 100;
+                startWave(2);
+            } else if (currentWave === 2 && waveEnemiesSpawned >= waveEnemiesTotal && enemies.length === 0) {
+                startWave(3);
+            } else if (currentWave === 3 && waveEnemiesSpawned >= waveEnemiesTotal && enemies.length === 0) {
+                startWave(4);
+            }
+
+            if (player.health <= 0) {
+                endGame(false);
+            }
+        }
+
+        function updateEnemies() {
+            const ratsOnScreen = enemies.filter(e => e.type === 'rat').length;
+            
+            if (ratChantPlaying && ratsOnScreen === 0 && sounds.ratsSixSeven) {
+                sounds.ratsSixSeven.pause();
+                sounds.ratsSixSeven.currentTime = 0;
+                ratChantPlaying = false;
+            }
+            
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+
+                if (e.type === 'turdal') {
+                    e.x += e.velocityX;
+                    
+                    e.shootTimer--;
+                    if (e.shootTimer <= 0) {
+                        e.shootTimer = e.shootCooldown;
+                        spawnEnemyProjectile(e.x, e.y + e.height / 2, -5, 0);
+                    }
+                } else if (e.type === 'cloudTwerker') {
+                    e.x += e.velocityX;
+                    e.floatPhase += 0.05;
+                    // Bob up and down around base Y (no continuous descent)
+                    e.y = e.baseY + Math.sin(e.floatPhase) * 15; // ±15px bobbing range
+                    
+                    e.dropTimer--;
+                    if (e.dropTimer <= 0) {
+                        e.dropTimer = 90;
+                        const numDrops = 3 + Math.floor(Math.random() * 3);
+                        for (let i = 0; i < numDrops; i++) {
+                            spawnEnemyProjectile(
+                                e.x + (Math.random() - 0.5) * e.width,
+                                e.y + e.height,
+                                (Math.random() - 0.5) * 0.5,
+                                3,
+                                1,
+                                2
+                            );
+                        }
+                    }
+                } else if (e.type === 'khakipi') {
+                    e.x += e.velocityX;
+                    e.y += e.velocityY;
+                    
+                    e.burstTimer--;
+                    if (e.burstTimer <= 0) {
+                        e.burstTimer = 15 + Math.random() * 20; // Frequent direction changes
+                        // Bigger, more erratic movements
+                        e.velocityX = -3 + (Math.random() - 0.5) * 4; // -5 to -1
+                        e.velocityY = (Math.random() - 0.5) * 8; // Big vertical movements
+                    }
+                    
+                    // Keep in bounds (bounce off top/bottom)
+                    if (e.y < HUD_HEIGHT + 20) {
+                        e.y = HUD_HEIGHT + 20;
+                        e.velocityY = Math.abs(e.velocityY); // Bounce down
+                    }
+                    if (e.y > GROUND_Y - e.height - 20) {
+                        e.y = GROUND_Y - e.height - 20;
+                        e.velocityY = -Math.abs(e.velocityY); // Bounce up
+                    }
+                } else if (e.type === 'rat') {
+                    e.x += e.velocityX;
+                    
+                    e.animTimer++;
+                    if (e.animTimer > 15) {
+                        e.animFrame = 1 - e.animFrame;
+                        e.animTimer = 0;
+                    }
+                    
+                    if (e.canJump && e.onGround) {
+                        e.jumpTimer--;
+                        if (e.jumpTimer <= 0) {
+                            e.jumpTimer = e.jumpFrequency;
+                            e.velocityY = e.jumpPower;
+                            e.onGround = false;
+                        }
+                    }
+                    
+                    if (!e.onGround) {
+                        e.velocityY += 0.5;
+                        e.y += e.velocityY;
+                        
+                        if (e.y >= GROUND_Y - e.height) {
+                            e.y = GROUND_Y - e.height;
+                            e.velocityY = 0;
+                            e.onGround = true;
+                        }
+                    }
+                }
+
+                if (checkCollision(player, e)) {
+                    player.health -= 1.5; // Reduced from 2 (25% reduction)
+                    playSound('chipHit', 0.4);
+                    enemies.splice(i, 1);
+                    continue;
+                }
+
+                for (let j = projectiles.length - 1; j >= 0; j--) {
+                    const p = projectiles[j];
+                    if (checkPointInRect(p.x, p.y, e)) {
+                        e.health -= p.damage;
+                        projectiles.splice(j, 1);
+                        
+                        if (e.health <= 0) {
+                            stats.enemiesKilled++;
+                            
+                            score += e.points || 1;
+                            
+                            if (jetpackUnlocked) {
+                                player.jetpackEnergy = Math.min(100, player.jetpackEnergy + 10);
+                            }
+                            
+                            enemies.splice(i, 1);
+                        }
+                        break;
+                    }
+                }
+
+                if (e.x < -100 || e.y > BASE_HEIGHT + 50) {
+                    enemies.splice(i, 1);
+                }
+            }
+        }
+
+        const enemyProjectiles = [];
+
+        function spawnEnemyProjectile(x, y, vx, vy, damage = 1.5, radius = 5) {
+            enemyProjectiles.push({ x, y, velocityX: vx, velocityY: vy, radius, damage });
+        }
+
+        function updateBoss() {
+            boss.hopTimer--;
+            if (boss.hopTimer <= 0 && boss.isGrounded) {
+                boss.hopTimer = 60 + Math.random() * 60;
+                boss.velocityY = -8;
+                boss.isGrounded = false;
+                
+                if (player.x < boss.x - 50) {
+                    boss.velocityX = -1.5;
+                } else if (player.x > boss.x + boss.width + 50) {
+                    boss.velocityX = 1.5;
+                } else {
+                    boss.velocityX = 0;
+                }
+            }
+            
+            if (!boss.isGrounded) {
+                boss.velocityY += 0.5;
+                boss.y += boss.velocityY;
+                
+                if (boss.y >= GROUND_Y - boss.height) {
+                    boss.y = GROUND_Y - boss.height;
+                    boss.velocityY = 0;
+                    boss.isGrounded = true;
+                    boss.velocityX = 0;
+                }
+            }
+            
+            boss.x += boss.velocityX;
+            
+            if (boss.x < BASE_WIDTH / 2) boss.x = BASE_WIDTH / 2;
+            if (boss.x > BASE_WIDTH - boss.width - 20) boss.x = BASE_WIDTH - boss.width - 20;
+            
+            boss.shootTimer--;
+            
+            if (boss.shootTimer <= 0) {
+                boss.shootTimer = boss.shootCooldown;
+                boss.isShooting = true;
+                boss.shootAnimTimer = 20;
+                
+                const dx = player.x + player.width / 2 - boss.x;
+                const dy = player.y + player.height / 2 - (boss.y + boss.height / 2);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                spawnEnemyProjectile(
+                    boss.x,
+                    boss.y + boss.height / 2,
+                    (dx / dist) * 5,
+                    (dy / dist) * 5
+                );
+                
+                playSound('bruvBruh', 0.5);
+            }
+            
+            if (boss.shootAnimTimer > 0) {
+                boss.shootAnimTimer--;
+                if (boss.shootAnimTimer === 0) {
+                    boss.isShooting = false;
+                }
+            }
+
+            if (boss.health <= boss.maxHealth / 2 && bossPhase === 1) {
+                bossPhase = 2;
+                boss.shootCooldown = 30;
+            }
+
+            if (bossPhase === 2) {
+                boss.ratSpawnTimer++;
+                if (boss.ratSpawnTimer >= 180) {
+                    boss.ratSpawnTimer = 0;
+                    for (let i = 0; i < 7; i++) {
+                        const speedType = Math.random();
+                        let speed, jumpPower, jumpFrequency;
+                        
+                        // More fast rats: 60% fast/very fast
+                        // All speeds increased by 1.5x
+                        if (speedType < 0.15) {
+                            speed = -1.2; // was -0.8
+                            jumpPower = 0;
+                            jumpFrequency = 0;
+                        } else if (speedType < 0.25) {
+                            speed = -1.8; // was -1.2
+                            jumpPower = -5;
+                            jumpFrequency = 80 + Math.random() * 40;
+                        } else if (speedType < 0.6) {
+                            speed = -3.75; // was -2.5
+                            jumpPower = -8;
+                            jumpFrequency = 50 + Math.random() * 30;
+                        } else {
+                            speed = -6; // was -4
+                            jumpPower = -12;
+                            jumpFrequency = 30 + Math.random() * 20;
+                        }
+                        
+                        // Varied spawn types - ALL heights
+                        // Spawn just off right edge of visible arena
+                        const spawnType = Math.random();
+                        let spawnX, spawnY, initialVelocityY, onGround;
+                        
+                        if (spawnType < 0.25) {
+                            spawnX = BASE_WIDTH - 150 + i * 20 + Math.random() * 50;
+                            spawnY = GROUND_Y - 40;
+                            initialVelocityY = 0;
+                            onGround = true;
+                        } else if (spawnType < 0.5) {
+                            // Drop from ceiling
+                            spawnX = BASE_WIDTH - 200 + i * 20 + Math.random() * 100;
+                            spawnY = HUD_HEIGHT + 10;
+                            initialVelocityY = 0;
+                            onGround = false;
+                        } else if (spawnType < 0.75) {
+                            // Mid-air high
+                            spawnX = BASE_WIDTH - 150 + i * 20 + Math.random() * 80;
+                            spawnY = HUD_HEIGHT + 60 + Math.random() * 80;
+                            initialVelocityY = Math.random() * 2;
+                            onGround = false;
+                        } else {
+                            // Mid-air middle
+                            spawnX = BASE_WIDTH - 150 + i * 20 + Math.random() * 80;
+                            spawnY = HUD_HEIGHT + 140 + Math.random() * 80;
+                            initialVelocityY = Math.random() * 3;
+                            onGround = false;
+                        }
+                        
+                        enemies.push({
+                            type: 'rat',
+                            x: spawnX,
+                            y: spawnY,
+                            width: 40,
+                            height: 40,
+                            velocityX: speed,
+                            velocityY: initialVelocityY,
+                            health: 1,
+                            animFrame: 0,
+                            animTimer: 0,
+                            canJump: jumpPower !== 0,
+                            jumpPower: jumpPower,
+                            jumpTimer: jumpFrequency,
+                            jumpFrequency: jumpFrequency,
+                            onGround: onGround,
+                            points: 1
+                        });
+                    }
+                    
+                    if (!ratChantPlaying && sounds.ratsSixSeven) {
+                        sounds.ratsSixSeven.currentTime = 0;
+                        sounds.ratsSixSeven.play().catch(e => console.log('Rat chant blocked'));
+                        ratChantPlaying = true;
+                    }
+                }
+            }
+
+            for (let j = projectiles.length - 1; j >= 0; j--) {
+                const p = projectiles[j];
+                if (checkPointInRect(p.x, p.y, boss)) {
+                    boss.health -= p.damage;
+                    projectiles.splice(j, 1);
+                    
+                    if (boss.health <= 0) {
+                        victorySequence(); // Trigger victory animation
+                    }
+                }
+            }
+        }
+
+        function updateEnemyProjectiles() {
+            for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+                const p = enemyProjectiles[i];
+                p.x += p.velocityX;
+                p.y += p.velocityY;
+
+                const dx = p.x - (player.x + player.width / 2);
+                const dy = p.y - (player.y + player.height / 2);
+                if (Math.sqrt(dx * dx + dy * dy) < p.radius + 10) {
+                    player.health -= p.damage;
+                    playSound('chipHit', 0.4);
+                    enemyProjectiles.splice(i, 1);
+                    continue;
+                }
+
+                if (p.x < -20 || p.x > BASE_WIDTH + 20 || p.y < -20 || p.y > BASE_HEIGHT + 20) {
+                    enemyProjectiles.splice(i, 1);
+                }
+            }
+        }
+
+        // ===============================================
+        // COLLISION DETECTION
+        // ===============================================
+        function checkCollision(a, b) {
+            return a.x < b.x + b.width &&
+                   a.x + a.width > b.x &&
+                   a.y < b.y + b.height &&
+                   a.y + a.height > b.y;
+        }
+
+        function checkPointInRect(x, y, rect) {
+            return x >= rect.x && x <= rect.x + rect.width &&
+                   y >= rect.y && y <= rect.y + rect.height;
+        }
+
+        // ===============================================
+        // RENDER LOOP
+        // ===============================================
+        function render() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+
+            if (sprites.background && sprites.background.complete) {
+                ctx.drawImage(sprites.background, bgX1, 0, BASE_WIDTH, BASE_HEIGHT);
+                ctx.drawImage(sprites.background, bgX2, 0, BASE_WIDTH, BASE_HEIGHT);
+            }
+
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, GROUND_Y);
+            ctx.lineTo(BASE_WIDTH, GROUND_Y);
+            ctx.stroke();
+
+            const playerSprite = player.animFrame === 0 ? sprites.chonxStand : sprites.chonxRun;
+            if (playerSprite && playerSprite.complete) {
+                ctx.save();
+                if (player.facing === -1) {
+                    ctx.translate(player.x + player.width, player.y);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(playerSprite, 0, 0, player.width, player.height);
+                } else {
+                    ctx.drawImage(playerSprite, player.x, player.y, player.width, player.height);
+                }
+                ctx.restore();
+            } else {
+                ctx.fillStyle = '#ff00ff';
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
+
+            enemies.forEach(e => {
+                let sprite = null;
+                if (e.type === 'turdal') sprite = sprites.turdal;
+                else if (e.type === 'cloudTwerker') sprite = sprites.cloudTwerker;
+                else if (e.type === 'khakipi') sprite = sprites.khakipi;
+                else if (e.type === 'rat') sprite = e.animFrame === 0 ? sprites.rat1 : sprites.rat2;
+
+                if (sprite && sprite.complete) {
+                    ctx.drawImage(sprite, e.x, e.y, e.width, e.height);
+                } else {
+                    ctx.fillStyle = '#00ff00';
+                    ctx.fillRect(e.x, e.y, e.width, e.height);
+                }
+            });
+
+            if (boss) {
+                const bossSprite = boss.isShooting ? sprites.braynSpit : sprites.braynStand;
+                
+                if (bossPhase === 2 && Math.floor(Date.now() / 200) % 2 === 0) {
+                    ctx.globalAlpha = 0.7;
+                }
+                
+                if (bossSprite && bossSprite.complete) {
+                    ctx.save();
+                    ctx.translate(boss.x + boss.width, boss.y);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(bossSprite, 0, 0, boss.width, boss.height);
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
+                }
+                
+                ctx.globalAlpha = 1;
+
+                const barWidth = 200;
+                const barHeight = 20;
+                const barX = (BASE_WIDTH - barWidth) / 2;
+                const barY = HUD_HEIGHT + 20;
+                
+                ctx.fillStyle = '#000';
+                ctx.fillRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+                
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+                
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(barX, barY, barWidth * (boss.health / boss.maxHealth), barHeight);
+                
+                ctx.fillStyle = '#ffff00';
+                ctx.font = '8px "Press Start 2P"';
+                ctx.textAlign = 'center';
+                ctx.fillText('BRAYN WRAUGHT', BASE_WIDTH / 2, barY - 8);
+                ctx.textAlign = 'left';
+            }
+
+            projectiles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = 0.8;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = p.isCharged ? '#ffff00' : '#00ffff';
+                ctx.fillStyle = p.isCharged ? '#ffff00' : '#00ffff';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            enemyProjectiles.forEach(p => {
+                if (p.radius === 2) {
+                    ctx.fillStyle = '#00ff00';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#00ff00';
+                    ctx.beginPath();
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2;
+                        const variation = 0.7 + Math.sin(Date.now() / 100 + i) * 0.3;
+                        const radius = p.radius * variation;
+                        const x = p.x + Math.cos(angle) * radius;
+                        const y = p.y + Math.sin(angle) * radius;
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            });
+
+            // Draw Neon Bread logo (bottom right of play arena, 65% opacity)
+            if (sprites.neonBreadLogo && sprites.neonBreadLogo.complete) {
+                ctx.save();
+                ctx.globalAlpha = 0.65;
+                const logoWidth = 45;
+                const logoHeight = (sprites.neonBreadLogo.height / sprites.neonBreadLogo.width) * logoWidth;
+                const logoX = 467 - logoWidth - 0; // Right edge of play arena (before right control panel)
+                const logoY = BASE_HEIGHT - logoHeight - 10;
+                ctx.drawImage(
+                    sprites.neonBreadLogo,
+                    logoX,
+                    logoY,
+                    logoWidth,
+                    logoHeight
+                );
+                ctx.restore();
+            }
+
+            drawHUD();
+        }
+
+        function drawHUD() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, BASE_WIDTH, HUD_HEIGHT);
+            
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, BASE_WIDTH, HUD_HEIGHT);
+
+            ctx.font = '10px "Press Start 2P"';
+            
+            // Health bar - starts at 200px (after left control panel)
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(200, 10, 150, 15);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(200, 10, 150 * (player.health / 100), 15);
+            ctx.fillStyle = '#fff';
+            ctx.fillText('HP: ' + Math.max(0, Math.floor(player.health)) + '%', 205, 22);
+
+            // Jetpack bar
+            if (jetpackUnlocked) {
+                ctx.fillStyle = '#333';
+                ctx.fillRect(200, 30, 100, 15);
+                ctx.fillStyle = '#00ffff';
+                ctx.fillRect(200, 30, 100 * (player.jetpackEnergy / 100), 15);
+                ctx.fillStyle = '#fff';
+                ctx.fillText('JET: ' + Math.floor(player.jetpackEnergy) + '%', 205, 42);
+            } else {
+                ctx.fillStyle = '#666';
+                ctx.fillText('JET: LOCKED', 205, 42);
+            }
+
+            // Score - ends before right control panel (BASE_WIDTH - 200)
+            ctx.fillStyle = '#fff';
+            ctx.fillText('PTS: ' + score, BASE_WIDTH - 300, 22);
+
+            // Wave
+            ctx.fillText('WAVE: ' + currentWave, BASE_WIDTH - 300, 42);
+
+            // Unlock indicator
+            if (score >= 67 && !jetpackUnlocked) {
+                ctx.fillStyle = '#ffff00';
+                ctx.fillText('67!', BASE_WIDTH / 2 - 15, 40);
+            }
+        }
+
+        // ===============================================
+        // GAME LOOP
+        // ===============================================
+        function gameLoop() {
+            update();
+            updateEnemyProjectiles();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ===============================================
+        // RESIZE HANDLING
+        // ===============================================
+        function resizeCanvas() {
+            scale = Math.min(
+                window.innerWidth / BASE_WIDTH,
+                window.innerHeight / BASE_HEIGHT
+            );
+
+            canvas.style.width = (BASE_WIDTH * scale) + 'px';
+            canvas.style.height = (BASE_HEIGHT * scale) + 'px';
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // ===============================================
+        // GAME START
+        // ===============================================
+        function startGameplay() {
+            document.getElementById('titleScreen').classList.add('hidden');
+            document.getElementById('leftControls').classList.add('active');
+            document.getElementById('rightControls').classList.add('active');
+            
+            gameState = 'playing';
+            stats.startTime = Date.now();
+            
+            startWave(1);
+            gameLoop();
+        }
+
+        // ===============================================
+        // GAME END
+        // ===============================================
+        const tips = [
+            "TIP: To activate the jet pack you must score 67 points",
+            "TIP: The jet pack can only be turned on while jumping",
+            "TIP: Hold shooting to charge your shot",
+            "TIP: Kills = jet pack energy"
+        ];
+        let currentTipIndex = 0;
+        let tipInterval = null;
+
+        function playVictoryChiptune() {
+            if (!audioContext) initAudioContext();
+            if (!audioContext) return;
+
+            try {
+                // Victory melody - upward arpeggio in C major
+                const notes = [
+                    { freq: 523.25, time: 0 },    // C5
+                    { freq: 659.25, time: 0.15 }, // E5
+                    { freq: 783.99, time: 0.3 },  // G5
+                    { freq: 1046.50, time: 0.45 }, // C6
+                    { freq: 783.99, time: 0.6 },  // G5
+                    { freq: 1046.50, time: 0.75 }, // C6 (hold)
+                ];
+
+                notes.forEach(note => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.type = 'square';
+                    oscillator.frequency.value = note.freq;
+                    
+                    const startTime = audioContext.currentTime + note.time;
+                    const duration = note.time === 0.75 ? 0.4 : 0.12; // Hold last note longer
+                    
+                    gainNode.gain.setValueAtTime(0.3, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + duration);
+                });
+            } catch (e) {
+                console.log('Victory chiptune error:', e);
+            }
+        }
+
+        function victorySequence() {
+            gameState = 'victory'; // New state to freeze gameplay
+
+            // Play victory chiptune
+            playVictoryChiptune();
+
+            // Store Brayn's final position for death animation
+            const dyingBrayn = {
+                x: boss.x,
+                y: boss.y,
+                width: boss.width,
+                height: boss.height,
+                velocityX: 0,
+                velocityY: 0,
+                rotation: 0,
+                alpha: 1,
+                bounceCount: 0
+            };
+
+            // Remove boss from game
+            boss = null;
+
+            let animationFrame = 0;
+            const totalFrames = 120; // ~2 seconds at 60fps
+
+            function animateBraynDeath() {
+                if (animationFrame >= totalFrames) {
+                    // Animation complete, show victory screen
+                    endGame(true);
+                    return;
+                }
+
+                animationFrame++;
+
+                // Phase 1: Erratic bouncing (frames 0-60)
+                if (animationFrame < 60) {
+                    dyingBrayn.velocityX = (Math.random() - 0.5) * 15;
+                    dyingBrayn.velocityY = -8 + Math.random() * 4;
+                    dyingBrayn.rotation += (Math.random() - 0.5) * 0.5;
+                    
+                    // Apply velocity
+                    dyingBrayn.x += dyingBrayn.velocityX;
+                    dyingBrayn.y += dyingBrayn.velocityY;
+                    dyingBrayn.velocityY += 0.8; // Gravity
+                    
+                    // Bounce off edges
+                    if (dyingBrayn.x < 0 || dyingBrayn.x > BASE_WIDTH - dyingBrayn.width) {
+                        dyingBrayn.velocityX *= -1;
+                        dyingBrayn.bounceCount++;
+                    }
+                    if (dyingBrayn.y > GROUND_Y - dyingBrayn.height) {
+                        dyingBrayn.y = GROUND_Y - dyingBrayn.height;
+                        dyingBrayn.velocityY *= -0.7;
+                        dyingBrayn.bounceCount++;
+                    }
+                    
+                    // Flash colors (red/green/yellow)
+                    dyingBrayn.flashColor = animationFrame % 6 < 3 ? '#ff0000' : (animationFrame % 4 < 2 ? '#00ff00' : '#ffff00');
+                }
+                // Phase 2: Fly off screen (frames 60-90)
+                else if (animationFrame < 90) {
+                    dyingBrayn.velocityY = -20; // Shoot upward
+                    dyingBrayn.y += dyingBrayn.velocityY;
+                    dyingBrayn.rotation += 0.3;
+                    dyingBrayn.alpha = 1 - ((animationFrame - 60) / 30); // Fade out
+                }
+                // Phase 3: Screen flashes (frames 90-120)
+                else {
+                    const flashColors = ['#00ff00', '#ffff00', '#ff00ff'];
+                    const flashIndex = Math.floor((animationFrame - 90) / 5) % flashColors.length;
+                    ctx.fillStyle = flashColors[flashIndex];
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+                    ctx.globalAlpha = 1;
+                }
+
+                // Render dying Brayn (if still visible)
+                if (animationFrame < 90) {
+                    ctx.save();
+                    ctx.globalAlpha = dyingBrayn.alpha;
+                    
+                    // Translate to center of Brayn for rotation
+                    ctx.translate(dyingBrayn.x + dyingBrayn.width / 2, dyingBrayn.y + dyingBrayn.height / 2);
+                    ctx.rotate(dyingBrayn.rotation);
+                    
+                    // Flash effect
+                    if (dyingBrayn.flashColor && animationFrame < 60) {
+                        ctx.fillStyle = dyingBrayn.flashColor;
+                        ctx.fillRect(-dyingBrayn.width / 2, -dyingBrayn.height / 2, dyingBrayn.width, dyingBrayn.height);
+                    }
+                    
+                    // Draw Brayn sprite (flipped)
+                    if (sprites.braynStand && sprites.braynStand.complete) {
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(sprites.braynStand, -dyingBrayn.width / 2, -dyingBrayn.height / 2, dyingBrayn.width, dyingBrayn.height);
+                    }
+                    
+                    ctx.restore();
+                }
+
+                requestAnimationFrame(animateBraynDeath);
+            }
+
+            animateBraynDeath();
+        }
+
+        function endGame(isVictory) {
+            gameState = 'ended';
+            
+            const playTime = Math.floor((Date.now() - stats.startTime) / 1000);
+            
+            const titleElement = document.getElementById('endTitle');
+            if (isVictory) {
+                titleElement.innerHTML = 'MAIN CHARACTER<br>ENERGY!';
+            } else {
+                titleElement.innerHTML = 'YOU FAILED! 🙄';
+            }
+            
+            const statsHTML = `
+                <p>Enemies Neutralized: ${stats.enemiesKilled}</p>
+                <p>Charge Shots Used: ${stats.chargeShotsUsed}</p>
+                <p>Jet Pack Activations: ${stats.jetpackActivations}</p>
+                <p>Seconds of Attention Burned: ${playTime}</p>
+            `;
+            
+            document.getElementById('endStats').innerHTML = statsHTML;
+            
+            const tipsElement = document.getElementById('endTips');
+            if (isVictory) {
+                tipsElement.style.display = 'none';
+                if (tipInterval) clearInterval(tipInterval);
+            } else {
+                tipsElement.style.display = 'block';
+                currentTipIndex = 0;
+                tipsElement.textContent = tips[0];
+                if (tipInterval) clearInterval(tipInterval);
+                tipInterval = setInterval(() => {
+                    currentTipIndex = (currentTipIndex + 1) % tips.length;
+                    tipsElement.textContent = tips[currentTipIndex];
+                }, 3000);
+            }
+            
+            if (sounds.ratsSixSeven) {
+                sounds.ratsSixSeven.pause();
+                sounds.ratsSixSeven.currentTime = 0;
+            }
+            ratChantPlaying = false;
+            
+            document.getElementById('endScreen').classList.add('active');
+        }
+
+        document.getElementById('refreshButton').addEventListener('click', () => {
+            location.reload();
+        });
+
+        document.getElementById('meetCastButton').addEventListener('click', () => {
+            document.getElementById('endScreen').classList.remove('active');
+            document.getElementById('castScreen').classList.add('active');
+        });
+
+        document.getElementById('closeCastButton').addEventListener('click', () => {
+            document.getElementById('castScreen').classList.remove('active');
+            document.getElementById('endScreen').classList.add('active');
+        });
+
+        // ===============================================
+        // INITIALIZE
+        // ===============================================
+        
+        document.getElementById('logo').src = ASSET_BASE_URL + "assets/chonx25%20logo.png";
+        document.getElementById('rotateChonx').src = ASSETS.sprites.chonxStand; // Chonx for rotate screen
+        document.getElementById('castChonx').src = ASSETS.sprites.chonxStand;
+        document.getElementById('castKhakipi').src = ASSETS.sprites.khakipi;
+        document.getElementById('castTurdal').src = ASSETS.sprites.turdal;
+        document.getElementById('castCloudTwerker').src = ASSETS.sprites.cloudTwerker;
+        document.getElementById('castRat').src = ASSETS.sprites.rat1;
+        document.getElementById('castBrayn').src = ASSETS.sprites.braynStand;
+        
+        document.getElementById('startButton').addEventListener('click', () => {
+            document.getElementById('startButton').textContent = 'Loading...';
+            initAudioContext();
+            
+            loadAssets(() => {
+                if (sounds.bgMusic) {
+                    sounds.bgMusic.currentTime = 0;
+                    sounds.bgMusic.play().catch(e => console.log('Background music blocked'));
+                }
+                
+                setupControls();
+                startGameplay();
+            });
+        });
+    </script>
+</body>
+</html>
